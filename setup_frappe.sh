@@ -103,6 +103,8 @@ echo "Configuring MariaDB root account to be passwordless and use mysql_native_p
 set +e
 sudo mysql -uroot <<'SQL'
 ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING '';
+CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED VIA mysql_native_password USING '';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 SQL
 RET=$?
@@ -110,6 +112,8 @@ if [ $RET -ne 0 ]; then
   echo "First ALTER USER failed, trying alternative ALTER USER syntax..."
   sudo mysql -uroot <<'SQL'
 ALTER USER 'root'@'localhost' IDENTIFIED BY '';
+CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 SQL
   RET2=$?
@@ -117,6 +121,7 @@ SQL
     echo "Second ALTER USER failed, trying direct mysql.user update (last resort)..."
     sudo mysql -uroot <<'SQL'
 UPDATE mysql.user SET plugin='mysql_native_password', authentication_string='' WHERE User='root' AND Host='localhost';
+UPDATE mysql.user SET plugin='mysql_native_password', authentication_string='' WHERE User='root' AND Host='127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
     RET3=$?
